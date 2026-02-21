@@ -339,14 +339,14 @@
 
         function getSeasonClass(month, day) {
             const d = month * 100 + day;
-            // Verão: 21 Dez a 19 Mar
-            if (d >= 1121 || d < 220) return "bg-yellow-50/50";
-            // Outono: 20 Mar a 20 Jun
-            if (d >= 220 && d < 521) return "bg-orange-50/50";
-            // Inverno: 21 Jun a 21 Set
-            if (d >= 521 && d < 822) return "bg-blue-50/50";
-            // Primavera: 22 Set a 20 Dez
-            if (d >= 822 && d < 1121) return "bg-pink-50/50";
+            // Verão: 21 Dez a 19 Mar (Amarelo)
+            if (d >= 1121 || d < 220) return "bg-yellow-100";
+            // Outono: 20 Mar a 20 Jun (Laranja)
+            if (d >= 220 && d < 521) return "bg-orange-100";
+            // Inverno: 21 Jun a 21 Set (Azul)
+            if (d >= 521 && d < 822) return "bg-blue-100";
+            // Primavera: 22 Set a 20 Dez (Rosa)
+            if (d >= 822 && d < 1121) return "bg-pink-100";
             return "bg-white";
         }
 
