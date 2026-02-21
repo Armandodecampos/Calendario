@@ -301,7 +301,7 @@
         function getHolidays(year) {
             const easter = getEasterDate(year);
             const h = {
-                "01/01": { name: "Confraternização Universal" },
+                "01/01": { name: "Ano Novo" },
                 "21/04": { name: "Tiradentes" },
                 "01/05": { name: "Dia do Trabalho" },
                 "07/09": { name: "Independência" },
@@ -335,6 +335,19 @@
             if (Math.abs(phase - 0.50) < 0.03) return { icon: "🌕", name: "Cheia" };
             if (Math.abs(phase - 0.75) < 0.03) return { icon: "🌗", name: "Minguante" };
             return null;
+        }
+
+        function getSeasonClass(month, day) {
+            const d = month * 100 + day;
+            // Verão: 21 Dez a 19 Mar
+            if (d >= 1121 || d < 220) return "bg-yellow-50/50";
+            // Outono: 20 Mar a 20 Jun
+            if (d >= 220 && d < 521) return "bg-orange-50/50";
+            // Inverno: 21 Jun a 21 Set
+            if (d >= 521 && d < 822) return "bg-blue-50/50";
+            // Primavera: 22 Set a 20 Dez
+            if (d >= 822 && d < 1121) return "bg-pink-50/50";
+            return "bg-white";
         }
 
         // --- GESTÃO DE DADOS ---
@@ -397,9 +410,11 @@
             const holidays = getHolidays(year);
             const astro = getAstroEvents(year);
 
+            const firstDaySeason = getSeasonClass(month, 1);
+
             for (let i = 0; i < firstDay; i++) {
                 const empty = document.createElement('div');
-                empty.className = "bg-gray-50/20 min-h-[140px] rounded-2xl border border-transparent";
+                empty.className = `${firstDaySeason} opacity-40 min-h-[140px] rounded-2xl border border-transparent`;
                 targetGrid.appendChild(empty);
             }
 
@@ -409,13 +424,14 @@
                 const moon = getMoonPhase(year, month, d);
                 const astroEvent = astro[key];
                 const dayBdays = birthdays.filter(b => b.day === d && b.month === month);
+                const seasonClass = getSeasonClass(month, d);
 
                 const cell = document.createElement('div');
-                let cellClasses = "relative bg-white min-h-[140px] p-3 rounded-2xl border border-gray-100 flex flex-col hover:border-amber-200 transition-all";
+                let cellClasses = `relative ${seasonClass} min-h-[140px] p-3 rounded-2xl border border-gray-100 flex flex-col hover:border-amber-200 transition-all`;
                 let numClasses = "text-xl font-black numero-marrom";
 
                 if (holiday) {
-                    cellClasses = "relative bg-amber-50 min-h-[140px] p-3 rounded-2xl border-2 border-amber-300 flex flex-col shadow-sm";
+                    cellClasses = `relative ${seasonClass} brightness-95 min-h-[140px] p-3 rounded-2xl border-2 border-amber-300 flex flex-col shadow-sm`;
                     numClasses = "text-xl font-black numero-marrom bg-amber-200 px-2 rounded-lg";
                 }
 
@@ -490,23 +506,18 @@
             tempContainer.innerHTML = '';
 
             try {
-                // Configuração jspdf (A4: 210 x 297 mm)
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('p', 'mm', 'a4');
                 const pageWidth = doc.internal.pageSize.getWidth();
-                const pageHeight = doc.internal.pageSize.getHeight();
                 const margin = 10;
-                const availableHeight = pageHeight - (2 * margin);
 
                 for (let i = 0; i < monthsToRender.length; i++) {
                     const item = monthsToRender[i];
-
                     if (i > 0) doc.addPage();
 
-                    // Criar elemento para renderizar o mês
                     const monthWrapper = document.createElement('div');
                     monthWrapper.className = "p-4 bg-white border border-gray-100";
-                    monthWrapper.style.width = "1100px"; // Largura fixa para consistência
+                    monthWrapper.style.width = "1100px";
 
                     const header = document.createElement('div');
                     header.className = "flex justify-center mb-4";
@@ -517,14 +528,11 @@
 
                     const grid = document.createElement('div');
                     grid.className = "grid grid-cols-7 gap-2";
-
                     monthWrapper.appendChild(grid);
                     tempContainer.appendChild(monthWrapper);
 
-                    // Renderizar calendário
                     renderCalendar(item.month, item.year, grid, title);
 
-                    // Add weekday headers (prepend after renderCalendar clears and populates the grid)
                     const days = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
                     [...days].reverse().forEach(d => {
                         const dayHead = document.createElement('div');
@@ -533,7 +541,6 @@
                         grid.prepend(dayHead);
                     });
 
-                    // Capturar com html2canvas
                     const canvas = await html2canvas(monthWrapper, {
                         scale: 2,
                         useCORS: true,
@@ -547,6 +554,7 @@
                     const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
 
                     doc.addImage(imgData, 'JPEG', margin, margin, imgWidth, imgHeight);
+                    tempContainer.innerHTML = '';
                 }
 
                 doc.save(`Calendario_Exportacao_${startY}_${endY}.pdf`);
