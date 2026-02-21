@@ -169,7 +169,7 @@
                     </svg>
                     BAIXAR COMO PDF (A4)
                 </button>
-                <p class="text-[10px] text-gray-400 mt-2 text-center uppercase font-bold">Gera um arquivo PDF com vários meses</p>
+                <p class="text-[10px] text-gray-400 mt-2 text-center uppercase font-bold">Gera um arquivo PDF com um mês por página</p>
             </section>
 
             <!-- NOVO ANIVERSÁRIO -->
@@ -498,15 +498,14 @@
                 const margin = 10;
                 const availableHeight = pageHeight - (2 * margin);
 
-                let currentYPos = margin;
-                let monthsOnCurrentPage = 0;
-
                 for (let i = 0; i < monthsToRender.length; i++) {
                     const item = monthsToRender[i];
 
+                    if (i > 0) doc.addPage();
+
                     // Criar elemento para renderizar o mês
                     const monthWrapper = document.createElement('div');
-                    monthWrapper.className = "p-4 bg-white mb-8 border border-gray-100";
+                    monthWrapper.className = "p-4 bg-white border border-gray-100";
                     monthWrapper.style.width = "1100px"; // Largura fixa para consistência
 
                     const header = document.createElement('div');
@@ -518,20 +517,21 @@
 
                     const grid = document.createElement('div');
                     grid.className = "grid grid-cols-7 gap-2";
-                    // Add weekday headers
-                    const days = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
-                    days.forEach(d => {
-                        const dayHead = document.createElement('div');
-                        dayHead.className = "text-center font-black text-amber-800 py-2 text-sm border-b-2 border-amber-100";
-                        dayHead.innerText = d;
-                        grid.appendChild(dayHead);
-                    });
 
                     monthWrapper.appendChild(grid);
                     tempContainer.appendChild(monthWrapper);
 
                     // Renderizar calendário
                     renderCalendar(item.month, item.year, grid, title);
+
+                    // Add weekday headers (prepend after renderCalendar clears and populates the grid)
+                    const days = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
+                    [...days].reverse().forEach(d => {
+                        const dayHead = document.createElement('div');
+                        dayHead.className = "text-center font-black text-amber-800 py-2 text-sm border-b-2 border-amber-100";
+                        dayHead.innerText = d;
+                        grid.prepend(dayHead);
+                    });
 
                     // Capturar com html2canvas
                     const canvas = await html2canvas(monthWrapper, {
@@ -546,24 +546,7 @@
                     const imgWidth = pageWidth - (2 * margin);
                     const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
 
-                    // Se não couber na página atual, adicionar nova página
-                    if (currentYPos + imgHeight > pageHeight - margin && monthsOnCurrentPage > 0) {
-                        doc.addPage();
-                        currentYPos = margin;
-                        monthsOnCurrentPage = 0;
-                    }
-
-                    // Se não for o primeiro mês da página, desenhar linha tracejada
-                    if (monthsOnCurrentPage > 0) {
-                        doc.setLineDashPattern([2, 2], 0);
-                        doc.setDrawColor(150, 150, 150);
-                        doc.line(margin, currentYPos - 5, pageWidth - margin, currentYPos - 5);
-                        doc.setLineDashPattern([], 0);
-                    }
-
-                    doc.addImage(imgData, 'JPEG', margin, currentYPos, imgWidth, imgHeight);
-                    currentYPos += imgHeight + 10;
-                    monthsOnCurrentPage++;
+                    doc.addImage(imgData, 'JPEG', margin, margin, imgWidth, imgHeight);
                 }
 
                 doc.save(`Calendario_Exportacao_${startY}_${endY}.pdf`);
