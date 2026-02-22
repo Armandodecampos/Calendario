@@ -31,12 +31,7 @@
     <!-- CABEÇALHO GLOBAL (FORA DA ÁREA DO CALENDÁRIO) -->
     <header class="max-w-[1600px] mx-auto p-4 md:p-6 flex justify-between items-center">
         <div class="flex items-center gap-3">
-            <div class="bg-amber-500 p-2 rounded-lg shadow-md">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-            </div>
-            <h1 class="text-2xl font-black text-amber-900 tracking-tight">Meu Calendário</h1>
+            <h1 id="today-date-display" class="text-2xl font-black text-amber-900 tracking-tight"></h1>
         </div>
 
         <button id="open-settings" class="flex items-center gap-2 bg-white hover:bg-amber-50 text-amber-900 px-5 py-2.5 rounded-xl font-bold transition shadow-sm border border-amber-200">
@@ -172,27 +167,27 @@
                 <p class="text-[10px] text-gray-400 mt-2 text-center uppercase font-bold">Gera um arquivo PDF com um mês por página</p>
             </section>
 
-            <!-- NOVO ANIVERSÁRIO -->
+            <!-- EVENTO -->
             <section>
-                <h3 class="text-xs font-black text-amber-800 uppercase tracking-widest mb-4">Novo Aniversário</h3>
+                <h3 class="text-xs font-black text-amber-800 uppercase tracking-widest mb-4">Evento</h3>
                 <div class="space-y-4 bg-amber-50/50 p-5 rounded-2xl border border-amber-100">
                     <div>
-                        <label class="block text-[10px] font-black text-gray-500 mb-1 uppercase">Nome Completo</label>
+                        <label class="block text-[10px] font-black text-gray-500 mb-1 uppercase">Nome</label>
                         <input type="text" id="bday-name" placeholder="Ex: Maria Oliveira" class="w-full px-4 py-3 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none transition bg-white font-bold">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-black text-gray-500 mb-1 uppercase">Data de Nascimento</label>
+                        <label class="block text-[10px] font-black text-gray-500 mb-1 uppercase">Data inicial</label>
                         <input type="date" id="bday-date" class="w-full px-4 py-3 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none transition bg-white font-bold">
                     </div>
                     <button id="add-bday" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-black py-3 rounded-xl transition-all shadow-md">
-                        SALVAR NOME
+                        SALVAR EVENTO
                     </button>
                 </div>
             </section>
 
             <!-- LISTA -->
             <section>
-                <h3 class="text-xs font-black text-amber-800 uppercase tracking-widest mb-4">Nomes Cadastrados</h3>
+                <h3 class="text-xs font-black text-amber-800 uppercase tracking-widest mb-4">Eventos Cadastrados</h3>
                 <div id="bday-list" class="space-y-3">
                     <p class="text-gray-400 text-sm italic text-center py-4">Nenhum registro.</p>
                 </div>
@@ -203,8 +198,14 @@
     <script>
         const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
-        let currentMonth = new Date().getMonth();
-        let currentYear = new Date().getFullYear();
+        const today = new Date();
+        const formattedToday = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+        document.getElementById('today-date-display').textContent = formattedToday;
+
+        const sanitize = (str) => str.replace(/[&<>"']/g, m => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[m]));
+
+        let currentMonth = today.getMonth();
+        let currentYear = today.getFullYear();
         let birthdays = JSON.parse(localStorage.getItem('user_birthdays_v3') || '[]');
 
         const monthYearDisplay = document.getElementById('month-year-display');
@@ -340,13 +341,13 @@
         function getSeasonClass(month, day) {
             const d = month * 100 + day;
             // Verão: 21 Dez a 19 Mar (Amarelo)
-            if (d >= 1121 || d < 220) return "bg-yellow-100";
+            if (d >= 1121 || d < 220) return "bg-yellow-200";
             // Outono: 20 Mar a 20 Jun (Laranja)
-            if (d >= 220 && d < 521) return "bg-orange-100";
+            if (d >= 220 && d < 521) return "bg-orange-200";
             // Inverno: 21 Jun a 21 Set (Azul)
-            if (d >= 521 && d < 822) return "bg-blue-100";
+            if (d >= 521 && d < 822) return "bg-blue-200";
             // Primavera: 22 Set a 20 Dez (Rosa)
-            if (d >= 822 && d < 1121) return "bg-pink-100";
+            if (d >= 822 && d < 1121) return "bg-pink-200";
             return "bg-white";
         }
 
@@ -361,10 +362,10 @@
             bdayListContainer.innerHTML = sorted.map((b) => `
                 <div class="flex justify-between items-center p-4 bg-white rounded-2xl border border-amber-100 shadow-sm hover:border-amber-400 transition group">
                     <div>
-                        <div class="font-black text-amber-900 text-sm uppercase">${b.name}</div>
+                        <div class="font-black text-amber-900 text-sm uppercase">${sanitize(b.name)}</div>
                         <div class="text-[10px] text-amber-600 font-bold">${b.day}/${b.month + 1}/${b.birthYear}</div>
                     </div>
-                    <button onclick="removeBday('${b.id}')" class="text-gray-300 hover:text-red-500 transition p-2 rounded-full hover:bg-red-50">
+                    <button onclick="removeBday('${sanitize(b.id)}')" class="text-gray-300 hover:text-red-500 transition p-2 rounded-full hover:bg-red-50">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
@@ -447,8 +448,9 @@
 
                 dayBdays.forEach(b => {
                     const age = year - b.birthYear;
-                    html += `<div class="text-[10px] font-black text-blue-900 bg-blue-100 px-2 py-1 rounded-md border border-blue-200 truncate" title="${b.name} faz ${age} anos">
-                        🎁 ${b.name} (${age}A)
+                    const safeName = sanitize(b.name);
+                    html += `<div class="text-[10px] font-black text-blue-900 bg-blue-100 px-2 py-1 rounded-md border border-blue-200 truncate" title="${safeName} faz ${age} anos">
+                        🎁 ${safeName} (${age}A)
                     </div>`;
                 });
 
