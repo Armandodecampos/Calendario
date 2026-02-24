@@ -167,6 +167,26 @@
                 <p class="text-[10px] text-gray-400 mt-2 text-center uppercase font-bold">Gera um arquivo PDF com um mês por página</p>
             </section>
 
+            <!-- BACKUP -->
+            <section>
+                <h3 class="text-xs font-black text-amber-800 uppercase tracking-widest mb-4">Backup de Dados</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <button id="export-data" class="flex flex-col items-center justify-center gap-2 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold py-4 rounded-2xl transition-all shadow-sm active:scale-95 border border-amber-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        <span class="text-[10px] uppercase">Exportar JSON</span>
+                    </button>
+                    <button id="import-data-trigger" class="flex flex-col items-center justify-center gap-2 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold py-4 rounded-2xl transition-all shadow-sm active:scale-95 border border-amber-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        <span class="text-[10px] uppercase">Importar JSON</span>
+                    </button>
+                    <input type="file" id="import-data-file" class="hidden" accept=".json">
+                </div>
+            </section>
+
             <!-- EVENTO -->
             <section>
                 <h3 class="text-xs font-black text-amber-800 uppercase tracking-widest mb-4">Evento</h3>
@@ -568,6 +588,48 @@
                 btn.innerText = originalText;
                 btn.disabled = false;
             }
+        });
+
+        // --- BACKUP DE DADOS ---
+        document.getElementById('export-data').addEventListener('click', () => {
+            const dataStr = JSON.stringify(birthdays, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Backup_Calendario_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        });
+
+        document.getElementById('import-data-trigger').addEventListener('click', () => {
+            document.getElementById('import-data-file').click();
+        });
+
+        document.getElementById('import-data-file').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+                    if (Array.isArray(importedData)) {
+                        birthdays = importedData;
+                        localStorage.setItem('user_birthdays_v3', JSON.stringify(birthdays));
+                        updateBdayList();
+                        renderCalendar(currentMonth, currentYear);
+                        alert('Dados importados com sucesso!');
+                    } else {
+                        alert('Arquivo inválido. Certifique-se de que é um backup válido.');
+                    }
+                } catch (err) {
+                    console.error("Erro ao importar:", err);
+                    alert('Erro ao processar o arquivo.');
+                }
+                e.target.value = ''; // Reset input
+            };
+            reader.readAsText(file);
         });
 
         updateBdayList();
