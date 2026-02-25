@@ -126,7 +126,13 @@
                     </svg>
                     BAIXAR COMO IMAGEM (HD)
                 </button>
-                <p class="text-[10px] text-gray-400 mt-2 text-center uppercase font-bold">Gera um arquivo PNG de alta resolução</p>
+                <button id="download-txt" class="w-full mt-4 group flex items-center justify-center gap-3 bg-amber-600 hover:bg-amber-700 text-white font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    BAIXAR COMO TXT
+                </button>
+                <p class="text-[10px] text-gray-400 mt-2 text-center uppercase font-bold">Gera um arquivo de texto com seus eventos</p>
             </section>
 
             <!-- EXPORTAR PDF -->
@@ -278,6 +284,33 @@
                 btn.innerText = originalText;
                 btn.disabled = false;
             }
+        });
+
+        // --- EXPORTAÇÃO TXT ---
+        document.getElementById('download-txt').addEventListener('click', () => {
+            if (birthdays.length === 0) {
+                alert("Nenhum evento para exportar.");
+                return;
+            }
+
+            const sorted = [...birthdays].sort((a, b) => (a.month * 100 + a.day) - (b.month * 100 + b.day));
+            let content = "LISTA DE EVENTOS - CALENDÁRIO\n";
+            content += "============================\n\n";
+
+            sorted.forEach(b => {
+                const day = b.day.toString().padStart(2, '0');
+                const month = (b.month + 1).toString().padStart(2, '0');
+                const year = b.birthYear;
+                content += `${day}/${month}/${year} - ${b.name}\n`;
+            });
+
+            const blob = new Blob([content], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Eventos_Calendario_${new Date().toISOString().split('T')[0]}.txt`;
+            link.click();
+            URL.revokeObjectURL(url);
         });
 
         // --- CONTROLES ---
