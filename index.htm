@@ -235,6 +235,7 @@
         let currentYear = today.getFullYear();
         let birthdays = JSON.parse(localStorage.getItem('user_birthdays_v3') || '[]');
         let isListView = window.innerWidth < 768;
+        let lastWidth = window.innerWidth;
 
         const monthYearDisplay = document.getElementById('month-year-display');
         const calendarGrid = document.getElementById('calendar-grid');
@@ -712,6 +713,9 @@
         });
 
         window.addEventListener('resize', () => {
+            if (window.innerWidth === lastWidth) return;
+            lastWidth = window.innerWidth;
+
             const shouldBeList = window.innerWidth < 768;
             if (shouldBeList !== isListView) {
                 isListView = shouldBeList;
