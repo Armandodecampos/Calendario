@@ -242,6 +242,18 @@
         </div>
     </div>
 
+    <!-- MODAL DE CONFIRMAÇÃO DE EXCLUSÃO -->
+    <div id="confirm-modal-overlay" class="fixed inset-0 bg-black/50 z-[60] hidden opacity-0 transition-opacity flex items-center justify-center p-4">
+        <div id="confirm-modal" class="bg-white rounded-3xl max-w-sm w-full p-8 shadow-2xl space-y-6 scale-95 transition-transform">
+            <h3 class="text-2xl font-black text-amber-900 text-center uppercase">Excluir Evento?</h3>
+            <p class="text-gray-600 text-center font-medium">Tem certeza que deseja remover este evento? Esta ação não pode ser desfeita.</p>
+            <div class="grid grid-cols-2 gap-3">
+                <button id="confirm-cancel" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-500 font-black py-4 rounded-2xl transition active:scale-95 uppercase text-xs">Cancelar</button>
+                <button id="confirm-delete" class="w-full bg-red-500 hover:bg-red-600 text-white font-black py-4 rounded-2xl transition shadow-md active:scale-95 uppercase text-xs">Excluir</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
@@ -271,6 +283,48 @@
             modal.classList.add('scale-95');
             setTimeout(() => overlay.classList.add('hidden'), 300);
         }
+
+        // --- FUNÇÕES DE CONFIRMAÇÃO DE EXCLUSÃO ---
+        let bdayIdToDelete = null;
+
+        function showConfirmModal(id) {
+            bdayIdToDelete = id;
+            const overlay = document.getElementById('confirm-modal-overlay');
+            const modal = document.getElementById('confirm-modal');
+            overlay.classList.remove('hidden');
+            setTimeout(() => {
+                overlay.classList.add('opacity-100');
+                modal.classList.remove('scale-95');
+                modal.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeConfirmModal() {
+            const overlay = document.getElementById('confirm-modal-overlay');
+            const modal = document.getElementById('confirm-modal');
+            overlay.classList.remove('opacity-100');
+            modal.classList.remove('scale-100');
+            modal.classList.add('scale-95');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                bdayIdToDelete = null;
+            }, 300);
+        }
+
+        document.getElementById('confirm-delete').addEventListener('click', () => {
+            if (bdayIdToDelete) {
+                removeBday(bdayIdToDelete);
+                closeConfirmModal();
+            }
+        });
+
+        document.getElementById('confirm-cancel').addEventListener('click', () => {
+            closeConfirmModal();
+        });
+
+        document.getElementById('confirm-modal-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'confirm-modal-overlay') closeConfirmModal();
+        });
 
         function getBackupText() {
             const sorted = [...birthdays].sort((a, b) => (a.month * 100 + a.day) - (b.month * 100 + b.day));
@@ -477,7 +531,7 @@
                         <div class="font-black text-amber-900 text-sm uppercase">${sanitize(b.name)}</div>
                         <div class="text-[10px] text-amber-600 font-bold">${b.day}/${b.month + 1}/${b.birthYear} - ${b.type || 'Aniversário'}</div>
                     </div>
-                    <button onclick="removeBday('${sanitize(b.id)}')" class="text-gray-300 hover:text-red-500 transition p-2 rounded-full hover:bg-red-50">
+                    <button onclick="showConfirmModal('${sanitize(b.id)}')" class="text-gray-300 hover:text-red-500 transition p-2 rounded-full hover:bg-red-50">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
