@@ -203,6 +203,14 @@
                         <input type="text" id="bday-name" placeholder="" class="w-full px-4 py-3 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none transition bg-white font-bold">
                     </div>
                     <div>
+                        <label class="block text-[10px] font-black text-gray-500 mb-1 uppercase">Tipo de Evento</label>
+                        <select id="event-type" class="w-full px-4 py-3 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none transition bg-white font-bold">
+                            <option value="Evento Único">Evento Único</option>
+                            <option value="Evento Contínuo">Evento Contínuo</option>
+                            <option value="Aniversário" selected>Aniversário</option>
+                        </select>
+                    </div>
+                    <div>
                         <label class="block text-[10px] font-black text-gray-500 mb-1 uppercase">Data inicial</label>
                         <input type="date" id="bday-date" class="w-full px-4 py-3 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none transition bg-white font-bold">
                     </div>
@@ -222,6 +230,19 @@
         </div>
     </div>
 
+    <!-- MODAL DE BACKUP -->
+    <div id="backup-modal-overlay" class="fixed inset-0 bg-black/50 z-[60] hidden opacity-0 transition-opacity flex items-center justify-center p-4">
+        <div id="backup-modal" class="bg-white rounded-3xl max-w-sm w-full p-8 shadow-2xl space-y-6 scale-95 transition-transform">
+            <h3 class="text-2xl font-black text-amber-900 text-center">Fazer Backup?</h3>
+            <p class="text-gray-600 text-center font-medium">Recomendamos salvar seus dados para não perdê-los.</p>
+            <div class="space-y-3">
+                <button id="backup-download" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-black py-4 rounded-2xl transition shadow-md active:scale-95">FAZER BACKUP</button>
+                <button id="backup-whatsapp" class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-4 rounded-2xl transition shadow-md active:scale-95">ENVIAR POR WHATSAPP</button>
+                <button id="backup-later" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-500 font-black py-4 rounded-2xl transition active:scale-95">DEIXAR PARA DEPOIS</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
@@ -230,6 +251,59 @@
         document.getElementById('today-date-display').textContent = formattedToday;
 
         const sanitize = (str) => str.replace(/[&<>"']/g, m => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[m]));
+
+        // --- FUNÇÕES DE MODAL DE BACKUP ---
+        function showBackupModal() {
+            const overlay = document.getElementById('backup-modal-overlay');
+            const modal = document.getElementById('backup-modal');
+            overlay.classList.remove('hidden');
+            setTimeout(() => {
+                overlay.classList.add('opacity-100');
+                modal.classList.remove('scale-95');
+                modal.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeBackupModal() {
+            const overlay = document.getElementById('backup-modal-overlay');
+            const modal = document.getElementById('backup-modal');
+            overlay.classList.remove('opacity-100');
+            modal.classList.remove('scale-100');
+            modal.classList.add('scale-95');
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+
+        function getBackupText() {
+            const sorted = [...birthdays].sort((a, b) => (a.month * 100 + a.day) - (b.month * 100 + b.day));
+            let content = "BACKUP DO CALENDÁRIO:\n\n";
+            sorted.forEach(b => {
+                const day = b.day.toString().padStart(2, '0');
+                const month = (b.month + 1).toString().padStart(2, '0');
+                const year = b.birthYear;
+                content += `${day}/${month}/${year} - ${b.name} (${b.type || 'Aniversário'})\n`;
+            });
+            return content;
+        }
+
+        function exportToWhatsApp() {
+            const text = getBackupText();
+            const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
+
+        document.getElementById('backup-download').addEventListener('click', () => {
+            document.getElementById('export-data').click();
+            closeBackupModal();
+        });
+
+        document.getElementById('backup-whatsapp').addEventListener('click', () => {
+            exportToWhatsApp();
+            closeBackupModal();
+        });
+
+        document.getElementById('backup-later').addEventListener('click', () => {
+            closeBackupModal();
+        });
 
         let currentMonth = today.getMonth();
         let currentYear = today.getFullYear();
@@ -392,7 +466,7 @@
                 <div class="flex justify-between items-center p-4 bg-white rounded-2xl border border-amber-100 shadow-sm hover:border-amber-400 transition group">
                     <div>
                         <div class="font-black text-amber-900 text-sm uppercase">${sanitize(b.name)}</div>
-                        <div class="text-[10px] text-amber-600 font-bold">${b.day}/${b.month + 1}/${b.birthYear}</div>
+                        <div class="text-[10px] text-amber-600 font-bold">${b.day}/${b.month + 1}/${b.birthYear} - ${b.type || 'Aniversário'}</div>
                     </div>
                     <button onclick="removeBday('${sanitize(b.id)}')" class="text-gray-300 hover:text-red-500 transition p-2 rounded-full hover:bg-red-50">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -413,6 +487,7 @@
         document.getElementById('add-bday').addEventListener('click', () => {
             const name = document.getElementById('bday-name').value;
             const dateVal = document.getElementById('bday-date').value;
+            const type = document.getElementById('event-type').value;
             if (!name || !dateVal) return;
 
             const dateObj = new Date(dateVal + "T12:00:00");
@@ -421,13 +496,15 @@
                 name,
                 day: dateObj.getDate(),
                 month: dateObj.getMonth(),
-                birthYear: dateObj.getFullYear()
+                birthYear: dateObj.getFullYear(),
+                type
             });
             localStorage.setItem('user_birthdays_v3', JSON.stringify(birthdays));
             document.getElementById('bday-name').value = '';
             document.getElementById('bday-date').value = '';
             updateBdayList();
             renderCalendar(currentMonth, currentYear);
+            showBackupModal();
         });
 
         // --- RENDER DO CALENDÁRIO ---
@@ -457,7 +534,13 @@
                 const holiday = holidays[key];
                 const moon = getMoonPhase(year, month, d);
                 const astroEvent = astro[key];
-                const dayBdays = birthdays.filter(b => b.day === d && b.month === month);
+                const dayBdays = birthdays.filter(b => {
+                    const isSameDayMonth = b.day === d && b.month === month;
+                    if (b.type === "Evento Único") {
+                        return isSameDayMonth && b.birthYear === year;
+                    }
+                    return isSameDayMonth;
+                });
                 const seasonClass = getSeasonClass(month, d);
                 const dayOfWeek = (firstDay + d - 1) % 7;
 
@@ -487,8 +570,11 @@
                 dayBdays.forEach(b => {
                     const age = year - b.birthYear;
                     const safeName = sanitize(b.name);
-                    html += `<div class="text-[10px] font-black text-blue-900 bg-blue-100 px-2 py-1 rounded-md border border-blue-200 truncate" title="${safeName} faz ${age} anos">
-                        🎁 ${safeName} (${age}A)
+                    const isBday = (b.type === "Aniversário" || !b.type);
+                    const ageText = isBday ? ` (${age} anos)` : '';
+
+                    html += `<div class="text-[10px] font-black text-blue-900 bg-blue-100 px-2 py-1 rounded-md border border-blue-200 truncate" title="${safeName}${isBday ? ` faz ${age} anos` : ''}">
+                        🎁 ${safeName}${ageText}
                     </div>`;
                 });
 
