@@ -62,17 +62,24 @@
                     Mês Ano
                 </h2>
 
-                <button id="next-month" class="p-3 rounded-full hover:bg-amber-200 text-amber-900 transition flex items-center justify-center bg-white shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                </button>
+                <div class="flex items-center gap-2">
+                    <button id="next-month" class="p-3 rounded-full hover:bg-amber-200 text-amber-900 transition flex items-center justify-center bg-white shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                    <button id="toggle-layout" class="p-3 rounded-full hover:bg-amber-200 text-amber-900 transition flex items-center justify-center bg-white shadow-sm" title="Alternar Layout">
+                        <svg id="layout-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <!-- Grid do Calendário -->
             <div class="p-6 overflow-x-auto no-scrollbar flex-1 bg-white">
-                <div class="min-w-[900px]">
-                    <div class="grid grid-cols-7 gap-px mb-4 border-b-2 border-amber-100">
+                <div id="calendar-container-inner" class="min-w-[900px]">
+                    <div id="calendar-days-header" class="grid grid-cols-7 gap-px mb-4 border-b-2 border-amber-100">
                         <div class="text-center font-black text-amber-800 py-3 text-sm">DOMINGO</div>
                         <div class="text-center font-black text-amber-800 py-3 text-sm">SEGUNDA</div>
                         <div class="text-center font-black text-amber-800 py-3 text-sm">TERÇA</div>
@@ -233,6 +240,7 @@
         let currentMonth = today.getMonth();
         let currentYear = today.getFullYear();
         let birthdays = JSON.parse(localStorage.getItem('user_birthdays_v3') || '[]');
+        let isListView = window.innerWidth < 768;
 
         const monthYearDisplay = document.getElementById('month-year-display');
         const calendarGrid = document.getElementById('calendar-grid');
@@ -466,11 +474,15 @@
 
             const firstDaySeason = getSeasonClass(month, 1);
 
-            for (let i = 0; i < firstDay; i++) {
-                const empty = document.createElement('div');
-                empty.className = `${firstDaySeason} opacity-40 min-h-[140px] rounded-2xl border border-transparent`;
-                targetGrid.appendChild(empty);
+            if (!isListView) {
+                for (let i = 0; i < firstDay; i++) {
+                    const empty = document.createElement('div');
+                    empty.className = `${firstDaySeason} opacity-40 min-h-[140px] rounded-2xl border border-transparent`;
+                    targetGrid.appendChild(empty);
+                }
             }
+
+            const dayOfWeekNames = ["DOMINGO", "SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"];
 
             for (let d = 1; d <= daysInMonth; d++) {
                 const key = formatDateKey(d, month);
@@ -479,18 +491,23 @@
                 const astroEvent = astro[key];
                 const dayBdays = birthdays.filter(b => b.day === d && b.month === month);
                 const seasonClass = getSeasonClass(month, d);
+                const dayOfWeek = (firstDay + d - 1) % 7;
 
                 const cell = document.createElement('div');
-                let cellClasses = `relative ${seasonClass} min-h-[140px] p-3 rounded-2xl border border-gray-100 flex flex-col hover:border-amber-200 transition-all`;
+                const minH = isListView ? 'min-h-[80px]' : 'min-h-[140px]';
+                let cellClasses = `relative ${seasonClass} ${minH} p-3 rounded-2xl border border-gray-100 flex flex-col hover:border-amber-200 transition-all`;
                 let numClasses = "text-xl font-black numero-marrom";
 
                 if (holiday) {
-                    cellClasses = `relative ${seasonClass} brightness-95 min-h-[140px] p-3 rounded-2xl border-2 border-amber-300 flex flex-col shadow-sm`;
+                    cellClasses = `relative ${seasonClass} brightness-95 ${minH} p-3 rounded-2xl border-2 border-amber-300 flex flex-col shadow-sm`;
                     numClasses = "text-xl font-black numero-marrom bg-amber-200 px-2 rounded-lg";
                 }
 
                 let html = `<div class="flex justify-between items-start">
-                    <span class="${numClasses}">${d}</span>
+                    <div class="flex items-center gap-2">
+                        <span class="${numClasses}">${d}</span>
+                        ${isListView ? `<span class="text-[10px] font-black text-amber-800/50">${dayOfWeekNames[dayOfWeek]}</span>` : ''}
+                    </div>
                     ${moon ? `<span class="text-xl" title="${moon.name}">${moon.icon}</span>` : ''}
                 </div>`;
 
@@ -665,8 +682,45 @@
             reader.readAsText(file);
         });
 
+        function updateLayout() {
+            const container = document.getElementById('calendar-container-inner');
+            const header = document.getElementById('calendar-days-header');
+            const grid = document.getElementById('calendar-grid');
+            const icon = document.getElementById('layout-icon');
+
+            if (isListView) {
+                container.classList.remove('min-w-[900px]');
+                header.classList.add('hidden');
+                grid.classList.remove('grid-cols-7', 'gap-3');
+                grid.classList.add('grid-cols-1', 'gap-4');
+                // Icon: 4 squares (Grid)
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />';
+            } else {
+                container.classList.add('min-w-[900px]');
+                header.classList.remove('hidden');
+                grid.classList.remove('grid-cols-1', 'gap-4');
+                grid.classList.add('grid-cols-7', 'gap-3');
+                // Icon: 3 lines (List)
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />';
+            }
+            renderCalendar(currentMonth, currentYear);
+        }
+
+        document.getElementById('toggle-layout').addEventListener('click', () => {
+            isListView = !isListView;
+            updateLayout();
+        });
+
+        window.addEventListener('resize', () => {
+            const shouldBeList = window.innerWidth < 768;
+            if (shouldBeList !== isListView) {
+                isListView = shouldBeList;
+                updateLayout();
+            }
+        });
+
         updateBdayList();
-        renderCalendar(currentMonth, currentYear);
+        updateLayout();
     </script>
 </body>
 </html>
