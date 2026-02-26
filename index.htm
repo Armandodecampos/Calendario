@@ -770,7 +770,7 @@
                 const day = b.day.toString().padStart(2, '0');
                 const month = (b.month + 1).toString().padStart(2, '0');
                 const year = b.birthYear;
-                content += `${day}/${month}/${year} - ${b.name}\n`;
+                content += `${day}/${month}/${year} - ${b.name} (${b.type || 'Aniversário'})\n`;
             });
 
             const blob = new Blob([content], { type: "text/plain" });
@@ -805,26 +805,48 @@
                     // Se falhar JSON, tenta processar como TXT
                     const lines = content.split('\n');
                     lines.forEach(line => {
-                        const match = line.match(/^(\d{2})\/(\d{2})\/(\d{4}) - (.+)$/);
+                        const match = line.match(/^(\d{2})\/(\d{2})\/(\d{4}) - (.+?)(?: \((.+)\))?$/);
                         if (match) {
-                            const [_, day, month, year, name] = match;
+                            const [_, day, month, year, name, type] = match;
                             importedData.push({
                                 id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
                                 name: name.trim(),
                                 day: parseInt(day),
                                 month: parseInt(month) - 1,
-                                birthYear: parseInt(year)
+                                birthYear: parseInt(year),
+                                type: type || 'Aniversário'
                             });
                         }
                     });
                 }
 
                 if (importedData.length > 0) {
-                    birthdays = importedData;
-                    localStorage.setItem('user_birthdays_v3', JSON.stringify(birthdays));
-                    updateBdayList();
-                    renderCalendar(currentMonth, currentYear);
-                    alert('Dados importados com sucesso!');
+                    // Remover duplicatas dentro do próprio backup
+                    const uniqueImportedData = importedData.filter((imp, index, self) =>
+                        index === self.findIndex((t) => (
+                            t.name === imp.name && t.day === imp.day && t.month === imp.month && t.birthYear === imp.birthYear
+                        ))
+                    );
+
+                    // Filtrar apenas o que ainda não existe no estado atual
+                    const novosDados = uniqueImportedData.filter(imp =>
+                        !birthdays.some(exist =>
+                            exist.name === imp.name &&
+                            exist.day === imp.day &&
+                            exist.month === imp.month &&
+                            exist.birthYear === imp.birthYear
+                        )
+                    );
+
+                    if (novosDados.length === 0) {
+                        alert('Todos os dados importados já existem no seu calendário.');
+                    } else {
+                        birthdays = [...birthdays, ...novosDados];
+                        localStorage.setItem('user_birthdays_v3', JSON.stringify(birthdays));
+                        updateBdayList();
+                        renderCalendar(currentMonth, currentYear);
+                        alert(`${novosDados.length} novos registros importados com sucesso!`);
+                    }
                 } else {
                     alert('Nenhum dado válido encontrado para importar.');
                 }
